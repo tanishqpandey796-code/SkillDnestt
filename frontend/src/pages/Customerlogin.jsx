@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
     ArrowRight,
@@ -8,14 +9,51 @@ import {
 } from "lucide-react";
 
 import logo from "../assets/Skill D Nest.jpeg";
+import api from "../services/api";
 import "./CustomerLogin.css";
 
 function CustomerLogin() {
     const navigate = useNavigate();
 
-    const handleLogin = (e) => {
+    const [identifier, setIdentifier] = useState("");
+    const [password, setPassword] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
+
+    const handleLogin = async (e) => {
         e.preventDefault();
-        navigate("/customer-dashboard");
+        setError("");
+        setLoading(true);
+
+        try {
+            const response = await api.post("/auth/login", {
+                identifier,
+                password
+            });
+
+            const { token, user } = response.data;
+
+            if (token) {
+                localStorage.setItem("token", token);
+            }
+            if (user) {
+                localStorage.setItem("user", JSON.stringify(user));
+            }
+
+            navigate("/customer-dashboard");
+        } catch (err) {
+            console.error("Login failed:", err);
+            const serverMessage = err.response?.data?.message;
+            if (serverMessage) {
+                setError(serverMessage);
+            } else if (err.code === "ERR_NETWORK") {
+                setError("Unable to connect to the backend server. Please verify the API URL.");
+            } else {
+                setError("Invalid email/phone or password. Please try again.");
+            }
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -107,6 +145,12 @@ function CustomerLogin() {
                     </p>
 
 
+                    {error && (
+                        <div style={{ color: "#ef4444", marginBottom: "1rem", fontSize: "0.9rem", padding: "0.5rem", background: "#fef2f2", borderRadius: "6px" }}>
+                            {error}
+                        </div>
+                    )}
+
                     <form onSubmit={handleLogin}>
 
                         <div className="input-group">
@@ -115,6 +159,8 @@ function CustomerLogin() {
                             <input
                                 type="text"
                                 placeholder="Enter your email or phone"
+                                value={identifier}
+                                onChange={(e) => setIdentifier(e.target.value)}
                                 required
                             />
                         </div>
@@ -126,6 +172,8 @@ function CustomerLogin() {
                             <input
                                 type="password"
                                 placeholder="Enter your password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
                                 required
                             />
                         </div>
@@ -144,8 +192,9 @@ function CustomerLogin() {
                         <button
                             type="submit"
                             className="customer-login-btn"
+                            disabled={loading}
                         >
-                            Login as Customer
+                            {loading ? "Logging in..." : "Login as Customer"}
                             <ArrowRight size={19} />
                         </button>
 

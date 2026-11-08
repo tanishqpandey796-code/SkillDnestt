@@ -78,21 +78,27 @@ router.post("/register", async (req, res) => {
 // =========================
 router.post("/login", async (req, res) => {
     try {
-        const { phone, password } = req.body;
+        const { phone, email, identifier, password } = req.body;
+        const loginId = identifier || phone || email;
 
         // Required fields check
-        if (!phone || !password) {
+        if (!loginId || !password) {
             return res.status(400).json({
-                message: "Phone and password are required"
+                message: "Email/Phone and password are required"
             });
         }
 
-        // Find user
-        const user = await User.findOne({ phone });
+        // Find user by phone or email
+        const user = await User.findOne({
+            $or: [
+                { phone: loginId },
+                { email: loginId.toLowerCase() }
+            ]
+        });
 
         if (!user) {
             return res.status(401).json({
-                message: "Invalid phone or password"
+                message: "Invalid phone/email or password"
             });
         }
 

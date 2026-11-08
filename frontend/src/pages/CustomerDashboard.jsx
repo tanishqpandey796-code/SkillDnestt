@@ -347,38 +347,15 @@ function CustomerDashboard() {
 
                 const token = localStorage.getItem("token");
 
-                const response = await fetch(
-                    "http://127.0.0.1:5000/api/cooperatives",
-                    {
-                        method: "GET",
-                        headers: {
-                            "Content-Type": "application/json",
-                            ...(token
-                                ? {
-                                      Authorization: `Bearer ${token}`
-                                  }
-                                : {})
-                        }
-                    }
-                );
+                const response = await api.get("/cooperatives", {
+                    headers: token
+                        ? {
+                              Authorization: `Bearer ${token}`
+                          }
+                        : {}
+                });
 
-                const responseText = await response.text();
-                let data = {};
-
-                try {
-                    data = responseText
-                        ? JSON.parse(responseText)
-                        : {};
-                } catch {
-                    data = {};
-                }
-
-                if (!response.ok) {
-                    throw new Error(
-                        data.message ||
-                        `Cooperative API failed (${response.status})`
-                    );
-                }
+                const data = response.data || {};
 
                 const societies =
                     data?.cooperatives ||
@@ -397,41 +374,18 @@ function CustomerDashboard() {
                         .filter((society) => society?._id)
                         .map(async (society) => {
                             try {
-                                const workerResponse = await fetch(
-                                    `http://127.0.0.1:5000/api/cooperatives/${society._id}/workers`,
+                                const workerResponse = await api.get(
+                                    `/cooperatives/${society._id}/workers`,
                                     {
-                                        method: "GET",
-                                        headers: {
-                                            "Content-Type":
-                                                "application/json",
-                                            ...(token
-                                                ? {
-                                                      Authorization: `Bearer ${token}`
-                                                  }
-                                                : {})
-                                        }
+                                        headers: token
+                                            ? {
+                                                  Authorization: `Bearer ${token}`
+                                              }
+                                            : {}
                                     }
                                 );
 
-                                const workerText =
-                                    await workerResponse.text();
-
-                                let workerPayload = {};
-
-                                try {
-                                    workerPayload = workerText
-                                        ? JSON.parse(workerText)
-                                        : {};
-                                } catch {
-                                    workerPayload = {};
-                                }
-
-                                if (!workerResponse.ok) {
-                                    throw new Error(
-                                        workerPayload.message ||
-                                        `Worker API failed (${workerResponse.status})`
-                                    );
-                                }
+                                const workerPayload = workerResponse.data || {};
 
                                 const workerData =
                                     workerPayload?.workers ||
